@@ -8,7 +8,7 @@ import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
 
 // import "@openzeppelin/contracts/token/ERC721/extensions/IERC721Metadata.sol";
 
-contract NFTMarketplace is ERC721URIStorage {
+contract NFTMarketplacev2 is ERC721URIStorage {
     using Counters for Counters.Counter;
     Counters.Counter private _tokenIds;
     Counters.Counter private _itemsSold;
@@ -28,7 +28,8 @@ contract NFTMarketplace is ERC721URIStorage {
         // string product_line;
         // string qr_code;
     }
-    mapping(uint256 => MarketItem) private idToMarketItem;
+    MarketItem marketItem;
+    mapping(uint256 => MarketItem) public idToMarketItem;
 
     // @dev It means written to the blochchain
     event MarketItemBought(
@@ -44,8 +45,18 @@ contract NFTMarketplace is ERC721URIStorage {
         string memory symbol,
         string memory baseURI
     ) ERC721(name, symbol) {
-        // baseTokenURI = baseURI;
+        // tokenURI = baseURI;
         owner = msg.sender;
+    }
+
+    function setMarketItem(
+        uint256 tokenId,
+        address seller,
+        address itemOwner,
+        uint256 price,
+        bool sold
+    ) public {
+        marketItem = MarketItem(tokenId, seller, itemOwner, price, sold);
     }
 
     /* Updates the listing price of the item */
@@ -66,12 +77,19 @@ contract NFTMarketplace is ERC721URIStorage {
     }
 
     // @dev Mint the NFT token and transfer it to the buyer
-    function buyItem(string memory tokenURI, MarketItem memory _item)
+    // @dev The "lazy minting" technique is used
+    // function buyItem(string memory tokenURI, MarketItem memory _item)
+    function buyItem(string memory tokenURI, uint256 tokenId)
         external
         returns (uint256)
     {
+        // TODO ---> royalties
         // make sure the buyer has money enough
-        uint256 itemPrice = _item.price;
+        marketItem = idToMarketItem[tokenId];
+        if (marketItem.sold) {
+            revert("This item is not on sale");
+        }
+        uint256 itemPrice = marketItem.price;
         if (testTokenContract.balanceOf(msg.sender) < itemPrice) {
             revert("Not enough money");
         }
@@ -96,13 +114,9 @@ contract NFTMarketplace is ERC721URIStorage {
         //     msg.value == listingPrice,
         //     "Price must be equal to listing price"
         // );
-        MarketItem memory marketItem; // = new MarketItem();  // "new" is only for contracts
-        marketItem.tokenId = tokenId;
-        marketItem.owner = msg.sender;
-        marketItem.price = price;
+        // MarketItem memory marketItem; // = new MarketItem();  // "new" is only for contracts
         // @dev the seller is the own marketplace only for new products
-        marketItem.seller = address(this);
-        marketItem.sold = true;
+        setMarketItem(tokenId, address(this), msg.sender, price, true);
         idToMarketItem[tokenId] = marketItem;
         // idToMarketItem[tokenId] = MarketItem;
         //     tokenId,
