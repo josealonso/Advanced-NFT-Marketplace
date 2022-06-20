@@ -28,7 +28,7 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: process.env.MUMBAI_API_KEY || "",
+        url: process.env.MUMBAI_API_KEY_URL || "",
       },
       // chainId: 1337
     },
