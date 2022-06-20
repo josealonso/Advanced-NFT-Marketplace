@@ -27,7 +27,10 @@ const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   networks: {
     hardhat: {
-      chainId: 1337
+      forking: {
+        url: process.env.MUMBAI_API_KEY || "",
+      },
+      // chainId: 1337
     },
     ropsten: {
       url: process.env.ROPSTEN_URL || "",
