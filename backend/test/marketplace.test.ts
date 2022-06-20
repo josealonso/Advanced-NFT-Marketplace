@@ -26,25 +26,27 @@ describe("NFTMarket", function () {
     // let item = await nftMarketplace.setMarketItem(1, deployer.address, client.address, PRICE, true);
     const PRICE = ethers.BigNumber.from("2");
     const OTHER_PRICE = ethers.BigNumber.from("3");
+    [deployer, client, manufacturer] = await ethers.getSigners();
     itemZero = await nftMarketplace.setMarketItem(0, deployer.address, client.address, PRICE, false);
-    itemOne = await nftMarketplace.setMarketItem(1, deployer.address, client.address, PRICE, false);
+    itemOne = await nftMarketplace.setMarketItem(1, deployer.address, client.address, OTHER_PRICE, false);
     itemTwo = await nftMarketplace.setMarketItem(2, deployer.address, client.address, PRICE, false);
   });
 
   it("Should not be able to buy a NFT if he has no enough money", async function () {
-    [deployer, client, manufacturer] = await ethers.getSigners();
+    // [deployer, client, manufacturer] = await ethers.getSigners();
     const TOKEN_ID = 2;
     const testToken = await ethers.getContractAt("IERC20", TEST_TOKEN);
     // let item = await nftMarketplace.setMarketItem(1, deployer.address, client.address, PRICE, true);
-    // Impersonate an account allows to use that account without having its private key
+    // @dev Impersonate an account allows to use that account without having its private key
     await hre.network.provider.request({
       method: "hardhat_impersonateAccount",
       params: [WHALE],
     });
     const signer = await ethers.getSigner(WHALE);
-    // await testToken.connect(signer).
-    let newTokenId = await nftMarketplace.connect(signer).buyItem("", 0);
-    // let newTokenId = await nftMarketplace.connect(client).buyItem("", TOKEN_ID);
+    let balanceInWei = await nftMarketplace.getUSDCBalance(signer.address);
+    let balanceInEther = ethers.utils.formatEther(balanceInWei);
+    console.log("Your balance: ", balanceInEther);
+    let newTokenId = await nftMarketplace.connect(signer).buyItem("", 1);
     console.log("The result is ", newTokenId);
     // assert(newTokenId, 3.toString());
   })
