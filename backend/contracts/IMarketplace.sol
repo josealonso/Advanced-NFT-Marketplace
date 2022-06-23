@@ -4,26 +4,39 @@ pragma solidity ^0.8.0;
 /**
  * For the first MVP, let's assume there is only one maker with only one collection.
  */
-
-struct CollectionData {
-    uint256 maxNumOfTokens;
-    address makerAddress;
-    string collectionURI;
-    // mapping(uint256 => uint256) idToTokenPrice;
+struct NftToken {
+    uint256 tokenId;
+    string metadataUri;
+    address owner;
+    uint256 price;
 }
 
 /**
- * @dev An integer is the collection identifier.
- * This variable relates the collection identifier and the collection data.
- * This is commented because it produces a compile error.
- * mapping (uint256 => CollectionData) public idToCollectionData;
+ * @dev An array is easier than a mapping/dictionary, although the mapping is more efficient.
  */
+struct NftCollection {
+    uint256 nftCollectionId;
+    string name;
+    string symbol;
+    string metadataURI;
+    uint256 makerRoyalties; // this field is optional
+    address makerAddress;
+    address nftContractAddress;
+    NftToken[] nftsInCollection;
+}
+
+// EnumerableSet.AddressSet private _nftCollectionAddresses;
+// uint256 private marketplaceRoyalties;
 
 interface IMarketplace {
     /**
      * @dev Emitted when a collection is added to the marketplace.
+     * A contract is created per collection.
      */
-    event AddCollection(uint256 indexed collectionId);
+    event CreateNftCollectionContract(
+        address indexed collectionAddress,
+        uint256 indexed collectionId
+    );
 
     /**
      * @dev Emitted when a token price is modified.
@@ -37,11 +50,15 @@ interface IMarketplace {
     /**
      * @dev Emitted when the royalties of an existing collection are modified.
      */
-    event UpdateRoyalties(
+    event UpdateMakerRoyalties(
         uint256 indexed collectionId,
-        uint256 sellerPercentage,
-        uint256 marketplacePercentage
+        uint256 makerPercentage
     );
+
+    /**
+     * @dev Emitted when the royalties of the marketplace are modified.
+     */
+    event UpdateMarketplaceRoyalties(uint256 marketpacePercentage);
 
     /**
      * @dev Emitted when a maker address is updated.
@@ -53,16 +70,13 @@ interface IMarketplace {
 
     /**
      * @dev Adds a collection to the marketplace.
-     * Emits a {AddCollection} event.
+     * Emits a {CreateNftCollectionContract} event.
      */
-    // function addCollection(uint256 collectionId) external;
-    function addCollection(
-        uint256 maxNumOfTokens,
-        address makerAddress,
-        string memory collectionURI,
-        // Starting from solidity 0.7.0, mappings can only live in storage
-        // mapping(uint256 => uint256) memory idToTokenPrice     // Compile error
-        mapping(uint256 => uint256) storage idToTokenPrice
+    function createNftCollectionContract(
+        NftCollection memory _newNftCollection
+        // address makerAddress,
+        // string memory collectionURI,
+        // uint256 sellerRoyalties
     ) external;
 
     function setCollectionURI(uint256 collectionId, string memory collectionURI)
@@ -75,15 +89,15 @@ interface IMarketplace {
      */
     function updateTokenPrice(
         uint256 collectionId,
+        // NftToken calldata _nftToken,
         uint256 tokenId,
         uint256 newPrice
     ) external;
 
-    function setRoyalties(
-        uint256 collectionId,
-        uint256 sellerPercentage,
-        uint256 marketplacePercentage
-    ) external;
+    function setMakerRoyalties(uint256 collectionId, uint256 makerPercentage)
+        external;
+
+    function setMarketplaceRoyalties(uint256 marketplacePercentage) external;
 
     /**
      * @dev Change the wallet address of a maker that is already registered on the marketplace.
@@ -110,11 +124,13 @@ interface IMarketplace {
 
     function getMakerAddress(uint256 collectionId) external returns (address);
 
-    function getMaxNumOfTokens(uint256 collectionId) external returns (uint256);
-
-    function getRoyalties(uint256 collectionId)
+    function getMarketplaceRoyalties()
         external
-        returns (uint256 sellerPercentage, uint256 marketplacePercentage);
+        returns (uint256 marketplacePercentage);
+
+    function getMakerRoyalties(uint256 collectionId)
+        external
+        returns (uint256 makerPercentage);
 
     function buyItem(uint256 collectionId, uint256 tokenId)
         external
