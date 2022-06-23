@@ -19,4 +19,8 @@ contract OurERC721Contract is ERC721, Ownable {
         super._mint(_to, _tokenIdTracker.current());
         _tokenIdTracker.increment();
     }
+
+    function _baseURI() internal view virtual override returns (string memory) {
+        return "https://mydomain/metadata/"; // To be changed
+    }
 }
