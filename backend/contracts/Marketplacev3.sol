@@ -1,8 +1,6 @@
 //SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-// Based on https://github.com/captain-woof/woofy-market
-
 import "@openzeppelin/contracts/proxy/Clones.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
@@ -11,6 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./IMarketplace.sol";
 
 /**
+ * Based on https://github.com/captain-woof/woofy-market
  * For the first MVP, let's assume there is only one maker with only one collection.
  */
 
