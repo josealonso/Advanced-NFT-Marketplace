@@ -9,7 +9,7 @@ import "./DataStructures.sol";
 // EnumerableSet.AddressSet private _nftCollectionAddresses;
 // uint256 private marketplaceRoyalties;
 
-interface IMarketplace {
+interface INFTMarketplace {
     /**
      * @dev Emitted when a collection is added to the marketplace.
      * A contract is created per collection.

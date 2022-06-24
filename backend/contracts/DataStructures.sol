@@ -12,12 +12,11 @@ struct NftToken {
  * @dev An array is easier than a mapping/dictionary, although the mapping is more efficient.
  */
 struct NftCollection {
-    uint256 nftCollectionId;
+    address nftContractAddress;  // collection identifier
     string name;
     string symbol;
     string metadataURI;
     uint256 makerRoyalties; // this field is optional
     address makerAddress;
-    address nftContractAddress;
     NftToken[] nftsInCollection;
 }

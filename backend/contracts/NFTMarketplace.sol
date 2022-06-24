@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
 // import "@openzeppelin/contracts/utils/structs/Counters.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./IMarketplace.sol";
+import "./INFTMarketplace.sol";
 
 /**
  * Based on https://github.com/captain-woof/woofy-market
@@ -23,37 +23,18 @@ import "./IMarketplace.sol";
 // all solidity code is transactional.  All pieces must run successfully
 // The only exception is when you use try/catch
 
-contract Marketplace is IMarketplace, ReentrancyGuard, Ownable {
+contract NFTMarketplace is INFTMarketplace, ReentrancyGuard, Ownable {
     // using Counters for Counters.Counter;
     using EnumerableSet for EnumerableSet.AddressSet;
 
     mapping(uint256 => NftCollection) public idToNftCollection;
-    EnumerableSet.AddressSet private _nftCollectionAddresses;
-    uint256 private marketplaceRoyalties;
-    address newNftCollection;
 
-    constructor(address _newNftCollection) {
-        newNftCollection = _newNftCollection;
-    }
+    // uint256 private marketplaceRoyalties;
 
-    /*
-     * @dev Minimal proxy pattern
-     */
-    function createNftCollectionContract(NftCollection memory _newNftCollection)
-        external
-        override
-        nonReentrant
-    {
-        address clonedNftCollectionAddress = Clones.clone(newNftCollection);
-        _newNftCollection.name;
-        // TODO populate the new collection with data
-        _nftCollectionAddresses.add(clonedNftCollectionAddress);
-        uint256 collectionId = 22;
-        emit CreateNftCollectionContract(
-            clonedNftCollectionAddress,
-            collectionId
-        );
-    }
+    // proxies don't have a constructor function
+    // constructor(address _newNftCollection) {
+    //     newNftCollection = _newNftCollection;
+    // }
 
     /**
      * @dev Adds a collection to the marketplace.
