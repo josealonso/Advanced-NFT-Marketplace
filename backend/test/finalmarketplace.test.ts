@@ -1,8 +1,13 @@
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { expect } from "chai";
+import { BigNumberish } from "ethers";
 import hre, { ethers } from "hardhat";
 import { FinalMarketplace, FinalMarketplace__factory, NFTCollection, NFTCollection__factory } from "../typechain";
 // import { MarketItemBoughtEvent } from "../typechain/NFTMarketplace";
+
+// 1 ether = 10**18 wei
+const toWei = (num: Number) => ethers.utils.parseEther(num.toString());
+const fromWei = (num: BigNumberish) => ethers.utils.formatEther(num);
 
 describe("NFTMarketplace", function () {
   // let NFTCollection: NFTCollection__factory;
@@ -72,8 +77,31 @@ describe("NFTMarketplace", function () {
       // client approves marketplace to spend nft
       await nftCollection.connect(client).setApprovalForAll(nftMarketplace.address, true);
     });
-    
+    it("Should track newly created item, transfer NFT from seller to marketplace and emit --- event", async function () {
+      // client offers their nft at a price of 1 ether
+      await expect(nftMarketplace.connect(client).addMarketItem(nftCollection.address, 1, toWei(1)))
+        .to.emit(nftMarketplace, "MarketItemAdded")
+        .withArgs(1, nftCollection.address, 1, toWei(1), client.address);
+      // Owner of NFT should now be the marketplace
+      expect(await nftCollection.ownerOf(1)).to.equal(nftMarketplace.address);
+      // Item count should now be equal 1
+      expect(await nftMarketplace.itemCount()).to.equal(1);
+      // Get item from items mapping then check fields to ensure they are correct
+      const item = await nftMarketplace.items(1);
+      expect(item.itemId).to.equal(1);
+      expect(item.nftCollection).to.equal(nftCollection.address);
+      expect(item.tokenId).to.equal(1);
+      expect(item.price).to.equal(toWei(1));
+      expect(item.sold).to.equal(false);
+    });
+    it("Should fail if price is set to zero", async function () {
+      await expect(
+        nftMarketplace.connect(client).addMarketItem(nftCollection.address, 1, 0)
+      ).to.be.revertedWith("Price must be greater than zero");
+    });
+
   });
+});
 
 //   it("Should not be able to buy a NFT if he has no enough money", async function () {
 //     // [deployer, client, manufacturer] = await ethers.getSigners();
