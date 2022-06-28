@@ -24,7 +24,7 @@ contract CollectionFactory is Ownable {
         uint256 _makerRoyalties,
         address _makerAddress,
         NftToken[] memory _nftsInCollection
-    ) external {
+    ) external returns (address) {
         NftCollection memory newCollection;
         address clonedCollectionAddress = Clones.clone(collectionAddress);
         // Populate the "instance" of NftCollection
@@ -36,9 +36,10 @@ contract CollectionFactory is Ownable {
         newCollection.makerRoyalties = _makerRoyalties;
         newCollection.makerAddress = _makerAddress;
         newCollection.nftsInCollection = _nftsInCollection;
-
+        //  TODO ---> initialize the 721 contract
         _collectionAddresses.push(clonedCollectionAddress);
         emit CreateCollection(clonedCollectionAddress, msg.sender);
+        return clonedCollectionAddress;
     }
 
     function getNumberOfCollections() public view returns (uint256) {
@@ -50,7 +51,6 @@ contract CollectionFactory is Ownable {
         view
         returns (address)
     {
-        // CollectionTag storage bank = _banks[index];
         return _collectionAddresses[index];
     }
 }
