@@ -3,14 +3,13 @@ import { expect } from "chai";
 import { BigNumberish } from "ethers";
 import hre, { ethers } from "hardhat";
 import { FinalMarketplace, FinalMarketplace__factory, NFTCollection, NFTCollection__factory } from "../typechain";
-// import { MarketItemBoughtEvent } from "../typechain/NFTMarketplace";
 
 // 1 ether = 10**18 wei
 const toWei = (num: Number) => ethers.utils.parseEther(num.toString());
 const fromWei = (num: BigNumberish) => ethers.utils.formatEther(num);
 
 describe("NFTMarketplace", function () {
-  // let NFTCollection: NFTCollection__factory;
+  let NFTCollection: NFTCollection__factory;
   let nftCollection: NFTCollection;
   // let NFTMarketplace: FinalMarketplace__factory;
   let nftMarketplace: FinalMarketplace;
@@ -30,28 +29,23 @@ describe("NFTMarketplace", function () {
   let itemOne: any;
   let itemTwo: any;
 
-  this.beforeEach(async function () {
-    // get contract factories
-    const NFTCollection = await ethers.getContractFactory("NFTCollection");
-    // nftCollection = await NFTCollection.deploy(NAME, SYMBOL, ethers.BigNumber.from(MAX_NUM_OF_TOKENS), "productName");  // maker.address);
-    nftCollection = await NFTCollection.deploy(NAME, SYMBOL, MAX_NUM_OF_TOKENS, "productName");
+  beforeEach(async function () {
     // get signers
     [deployer, client, client2, maker] = await ethers.getSigners();
+    // get contract factories
+    const NFTCollection = await ethers.getContractFactory("NFTCollection");
+    nftCollection = await NFTCollection.deploy(NAME, SYMBOL, ethers.BigNumber.from(MAX_NUM_OF_TOKENS), "productName", maker.address);
     // deploy contracts
     const NFTMarketplace = await ethers.getContractFactory("FinalMarketplace")
-    // nftMarketplace = await NFTMarketplace.deploy(ethers.BigNumber.from(FEE_PERCENT));
     nftMarketplace = await NFTMarketplace.deploy(FEE_PERCENT);
     await nftCollection.deployed();
-    await nftMarketplace.deployed();
   });
   describe("Deployment", function () {
     it("Should track name and symbol of the nft collection", async function () {
-
-      //     expect(await nftCollection.name()).to.equal(NAME);
-      //     expect(await nftCollection.symbol()).to.equal(SYMBOL);    // Errors
+      expect(await nftCollection.name()).to.equal(NAME);
+      expect(await nftCollection.symbol()).to.equal(SYMBOL);
     })
     it("Should track feePercent of the marketplace", async function () {
-      // console.log("AAAAA - ", await nftMarketplace.itemCount());
       expect(await nftMarketplace.feePercent()).to.equal(FEE_PERCENT);
       expect(await nftMarketplace.feeAccount()).to.equal(deployer.address);
     });
@@ -99,27 +93,32 @@ describe("NFTMarketplace", function () {
         nftMarketplace.connect(client).addMarketItem(nftCollection.address, 1, 0)
       ).to.be.revertedWith("Price must be greater than zero");
     });
+  });
+  describe("Buying marketplace items", function () {
+    let price = 2;
+    beforeEach(async function () {
+      // client mints an NFT
+      await nftCollection.connect(client).mint(URI);
+      // client approves marketplace to spend nft
+      await nftCollection.connect(client).setApprovalForAll(nftMarketplace.address, true);
+      // client makes their nft a marketplace item
+      await nftMarketplace.connect(client).addMarketItem(nftCollection.address, 1, toWei(price));
+    });
+    it("Should update item as sold, pay seller, transfer NFT to buyer, charge fees and emit a --- event", async function () {
+      const sellerInitialEthBalance = await client.getBalance();
+      const feeAccountInitialEthBalance = await deployer.getBalance();
+      // fetch items total price (market fees + item price)
+      let totalPriceInWei = await nftMarketplace.getTotalPrice(1);
+      // client2 buys item
+      await expect(nftMarketplace.connect(client2).buyMarketItem(1, { value: totalPriceInWei }))
+        .to.emit(nftMarketplace, "MarketItemPurchase")
+        .withArgs(1, nftCollection.address, 1, toWei(price), client.address, client2.address);
+      const sellerFinalEthBalance = await client.getBalance();
+      const feeAccountFinalEthBalance = await deployer.getBalance();
+      // Seller should receive payment for the price of the NFT sale
+      // expect(fromWei(sellerFinalEthBalance)).to.equal(price)
 
+    });
   });
 });
-
-//   it("Should not be able to buy a NFT if he has no enough money", async function () {
-//     // [deployer, client, manufacturer] = await ethers.getSigners();
-//     const TOKEN_ID = 2;
-//     const testToken = await ethers.getContractAt("IERC20", TEST_TOKEN);
-//     // let item = await nftMarketplace.setMarketItem(1, deployer.address, client.address, PRICE, true);
-//     // @dev Impersonate an account allows to use that account without having its private key
-//     await hre.network.provider.request({
-//       method: "hardhat_impersonateAccount",
-//       params: [WHALE],
-//     });
-//     const signer = await ethers.getSigner(WHALE);
-//     let balanceInWei = await nftMarketplace.getUSDCBalance(signer.address);
-//     let balanceInEther = ethers.utils.formatEther(balanceInWei);
-//     console.log("Your balance: ", balanceInEther);
-//     let newTokenId = await nftMarketplace.connect(signer).buyItem("", 1);
-//     console.log("The result is ", newTokenId);
-//     // assert(newTokenId, 3.toString());
-//   })
-// });
 
